@@ -250,10 +250,10 @@
 
         // Ghosts
         const ghosts = [
-            { name: 'blinky', color: COLORS.RED, pos: [12, 11], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
-            { name: 'pinky', color: COLORS.PINK, pos: [11, 11], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
-            { name: 'inky', color: COLORS.CYAN, pos: [13, 11], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
-            { name: 'clyde', color: COLORS.ORANGE, pos: [12, 12], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 }
+            { name: 'blinky', color: COLORS.RED, pos: [12, 9], dir: 'LEFT', frightened: false, eaten: false, respawnTime: 0 },
+            { name: 'pinky', color: COLORS.PINK, pos: [11, 9], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
+            { name: 'inky', color: COLORS.CYAN, pos: [13, 9], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
+            { name: 'clyde', color: COLORS.ORANGE, pos: [12, 10], dir: 'DOWN', frightened: false, eaten: false, respawnTime: 0 }
         ];
 
         // Canvas setup
@@ -454,10 +454,10 @@
                 ghost.eaten = false;
                 ghost.respawnTime = 0;
                 switch(index) {
-                    case 0: ghost.pos = [12, 11]; ghost.dir = 'UP'; break;
-                    case 1: ghost.pos = [11, 11]; ghost.dir = 'UP'; break;
-                    case 2: ghost.pos = [13, 11]; ghost.dir = 'UP'; break;
-                    case 3: ghost.pos = [12, 12]; ghost.dir = 'UP'; break;
+                    case 0: ghost.pos = [12, 9]; ghost.dir = 'LEFT'; break;
+                    case 1: ghost.pos = [11, 9]; ghost.dir = 'UP'; break;
+                    case 2: ghost.pos = [13, 9]; ghost.dir = 'UP'; break;
+                    case 3: ghost.pos = [12, 10]; ghost.dir = 'DOWN'; break;
                 }
             });
             
@@ -647,8 +647,8 @@
             if (ghost.eaten && Date.now() >= ghost.respawnTime) {
                 ghost.eaten = false;
                 ghost.frightened = false;
-                ghost.pos = [12, 11]; // Reset position
-                ghost.dir = 'UP';
+                ghost.pos = [12, 9]; // Reset to ghost lair
+                ghost.dir = 'LEFT';
             }
             
             if (globalFrame % GHOST_MOVE_INTERVAL !== 0) return;
