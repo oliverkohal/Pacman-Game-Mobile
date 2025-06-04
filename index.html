@@ -250,10 +250,10 @@
 
         // Ghosts
         const ghosts = [
-            { name: 'blinky', color: COLORS.RED, pos: [12, 9], dir: 'LEFT', frightened: false, eaten: false, respawnTime: 0 },
-            { name: 'pinky', color: COLORS.PINK, pos: [11, 9], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
-            { name: 'inky', color: COLORS.CYAN, pos: [13, 9], dir: 'DOWN', frightened: false, eaten: false, respawnTime: 0 },
-            { name: 'clyde', color: COLORS.ORANGE, pos: [12, 10], dir: 'DOWN', frightened: false, eaten: false, respawnTime: 0 }
+            { name: 'blinky', color: COLORS.RED, pos: [12, 11], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
+            { name: 'pinky', color: COLORS.PINK, pos: [11, 11], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
+            { name: 'inky', color: COLORS.CYAN, pos: [13, 11], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
+            { name: 'clyde', color: COLORS.ORANGE, pos: [12, 12], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 }
         ];
 
         // Canvas setup
@@ -454,10 +454,10 @@
                 ghost.eaten = false;
                 ghost.respawnTime = 0;
                 switch(index) {
-                    case 0: ghost.pos = [12, 9]; break;
-                    case 1: ghost.pos = [11, 9]; break;
-                    case 2: ghost.pos = [13, 9]; break;
-                    case 3: ghost.pos = [12, 10]; break;
+                    case 0: ghost.pos = [12, 11]; ghost.dir = 'UP'; break;
+                    case 1: ghost.pos = [11, 11]; ghost.dir = 'UP'; break;
+                    case 2: ghost.pos = [13, 11]; ghost.dir = 'UP'; break;
+                    case 3: ghost.pos = [12, 12]; ghost.dir = 'UP'; break;
                 }
             });
             
@@ -647,11 +647,124 @@
             if (ghost.eaten && Date.now() >= ghost.respawnTime) {
                 ghost.eaten = false;
                 ghost.frightened = false;
-                ghost.pos = [12, 9]; // Reset position
+                ghost.pos = [12, 11]; // Reset position
+                ghost.dir = 'UP';
             }
             
             if (globalFrame % GHOST_MOVE_INTERVAL !== 0) return;
             
+            // Get all possible directions
+            const possibleDirs = Object.keys(DIRECTIONS).filter(dir => {
+                const [newDx, newDy] = DIRECTIONS[dir];
+                let testX = ghost.pos[0] + newDx;
+                let testY = ghost.pos[1] + newDy;
+                
+                if (testX < 0) testX = MAZE_COLS - 1;
+                if (testX >= MAZE_COLS) testX = 0;
+                
+                return canMove(testX, testY);
+            });
+            
+            if (possibleDirs.length === 0) return;
+            
+            let chosenDir = ghost.dir;
+            
+            // Improved AI behavior
+            if (ghost.frightened) {
+                // When frightened, run away from Pacman
+                let bestDir = possibleDirs[0];
+                let maxDistance = 0;
+                
+                possibleDirs.forEach(dir => {
+                    const [dx, dy] = DIRECTIONS[dir];
+                    let newX = ghost.pos[0] + dx;
+                    let newY = ghost.pos[1] + dy;
+                    
+                    if (newX < 0) newX = MAZE_COLS - 1;
+                    if (newX >= MAZE_COLS) newX = 0;
+                    
+                    const distance = Math.abs(newX - pacman.pos[0]) + Math.abs(newY - pacman.pos[1]);
+                    if (distance > maxDistance) {
+                        maxDistance = distance;
+                        bestDir = dir;
+                    }
+                });
+                
+                chosenDir = bestDir;
+            } else {
+                // When not frightened, chase Pacman with some randomness
+                const distanceToPacman = Math.abs(ghost.pos[0] - pacman.pos[0]) + Math.abs(ghost.pos[1] - pacman.pos[1]);
+                
+                if (distanceToPacman > 8 || Math.random() < 0.3) {
+                    // If far from Pacman or random chance, move toward Pacman
+                    let bestDir = possibleDirs[0];
+                    let minDistance = Infinity;
+                    
+                    possibleDirs.forEach(dir => {
+                        const [dx, dy] = DIRECTIONS[dir];
+                        let newX = ghost.pos[0] + dx;
+                        let newY = ghost.pos[1] + dy;
+                        
+                        if (newX < 0) newX = MAZE_COLS - 1;
+                        if (newX >= MAZE_COLS) newX = 0;
+                        
+                        const distance = Math.abs(newX - pacman.pos[0]) + Math.abs(newY - pacman.pos[1]);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            bestDir = dir;
+                        }
+                    });
+                    
+                    chosenDir = bestDir;
+                } else {
+                    // If close to Pacman, add some randomness to avoid predictable behavior
+                    if (Math.random() < 0.7) {
+                        // 70% chance to move toward Pacman
+                        let bestDir = possibleDirs[0];
+                        let minDistance = Infinity;
+                        
+                        possibleDirs.forEach(dir => {
+                            const [dx, dy] = DIRECTIONS[dir];
+                            let newX = ghost.pos[0] + dx;
+                            let newY = ghost.pos[1] + dy;
+                            
+                            if (newX < 0) newX = MAZE_COLS - 1;
+                            if (newX >= MAZE_COLS) newX = 0;
+                            
+                            const distance = Math.abs(newX - pacman.pos[0]) + Math.abs(newY - pacman.pos[1]);
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                bestDir = dir;
+                            }
+                        });
+                        
+                        chosenDir = bestDir;
+                    } else {
+                        // 30% chance for random movement
+                        chosenDir = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
+                    }
+                }
+            }
+            
+            // Avoid going backwards unless it's the only option
+            if (possibleDirs.length > 1) {
+                const oppositeDir = {
+                    'LEFT': 'RIGHT',
+                    'RIGHT': 'LEFT',
+                    'UP': 'DOWN',
+                    'DOWN': 'UP'
+                }[ghost.dir];
+                
+                if (chosenDir === oppositeDir && Math.random() < 0.8) {
+                    const otherDirs = possibleDirs.filter(dir => dir !== oppositeDir);
+                    if (otherDirs.length > 0) {
+                        chosenDir = otherDirs[Math.floor(Math.random() * otherDirs.length)];
+                    }
+                }
+            }
+            
+            // Move the ghost
+            ghost.dir = chosenDir;
             const [dx, dy] = DIRECTIONS[ghost.dir];
             let newX = ghost.pos[0] + dx;
             let newY = ghost.pos[1] + dy;
@@ -662,22 +775,6 @@
             
             if (canMove(newX, newY)) {
                 ghost.pos = [newX, newY];
-            } else {
-                // Change direction randomly
-                const possibleDirs = Object.keys(DIRECTIONS).filter(dir => {
-                    const [newDx, newDy] = DIRECTIONS[dir];
-                    let testX = ghost.pos[0] + newDx;
-                    let testY = ghost.pos[1] + newDy;
-                    
-                    if (testX < 0) testX = MAZE_COLS - 1;
-                    if (testX >= MAZE_COLS) testX = 0;
-                    
-                    return canMove(testX, testY);
-                });
-                
-                if (possibleDirs.length > 0) {
-                    ghost.dir = possibleDirs[Math.floor(Math.random() * possibleDirs.length)];
-                }
             }
         }
 
