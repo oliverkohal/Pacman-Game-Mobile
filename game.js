@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pacman Game</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🟡</text></svg>">
     <style>
         body {
             margin: 0;
@@ -15,6 +16,10 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         
         #gameContainer {
@@ -25,12 +30,15 @@
             font-size: 24px;
             margin-bottom: 10px;
             color: #FFFF00;
+            font-weight: bold;
         }
         
         #gameCanvas {
-            border: 2px solid #2121DE;
+            border: 3px solid #2121DE;
             display: block;
             margin: 0 auto;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(33, 33, 222, 0.5);
         }
         
         #mobileControls {
@@ -39,6 +47,7 @@
             left: 50%;
             transform: translateX(-50%);
             display: none;
+            z-index: 1000;
         }
         
         .control-btn {
@@ -52,11 +61,19 @@
             margin: 5px;
             cursor: pointer;
             user-select: none;
+            -webkit-user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.1s ease;
         }
         
         .control-btn:active {
             background-color: #FFFF00;
             color: #2121DE;
+            transform: scale(0.95);
         }
         
         .control-row {
@@ -69,11 +86,40 @@
             margin-top: 20px;
             font-size: 14px;
             color: #ccc;
+            max-width: 400px;
+            line-height: 1.4;
+        }
+        
+        #gameStatus {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+            display: none;
         }
         
         @media (max-width: 768px) {
             #mobileControls {
                 display: block !important;
+            }
+            
+            body {
+                padding: 10px;
+            }
+            
+            #gameCanvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
             }
         }
     </style>
@@ -83,8 +129,14 @@
         <div id="score">Score: 0</div>
         <canvas id="gameCanvas"></canvas>
         <div id="instructions">
-            Use arrow keys or swipe to move Pacman
+            Use arrow keys or swipe to move Pacman<br>
+            Eat all dots to win! Power pellets make ghosts vulnerable.
         </div>
+    </div>
+    
+    <div id="gameStatus">
+        <div id="statusText"></div>
+        <div id="statusSubtext"></div>
     </div>
     
     <div id="mobileControls">
@@ -123,7 +175,7 @@
         };
 
         // Fixed maze layout (0=empty, 1=wall, 2=dot, 3=power pellet, 4=ghost door)
-        const MAZE = [
+        const MAZE_TEMPLATE = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,3,1],
             [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
@@ -148,7 +200,10 @@
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
-        // Pad maze to 31 rows
+        // Create a working copy of the maze
+        let MAZE = MAZE_TEMPLATE.map(row => [...row]);
+
+        // Pad maze to 31 rows if needed
         while (MAZE.length < MAZE_ROWS) {
             MAZE.push(new Array(MAZE_COLS).fill(1));
         }
@@ -159,6 +214,7 @@
         let youWin = false;
         let frightenedTimer = 0;
         let globalFrame = 0;
+        let gameStarted = false;
         
         const FRIGHTENED_DURATION = 8000;
         const GHOST_RESPAWN_TIME = 3000;
@@ -208,6 +264,11 @@
             keys[e.key] = true;
             e.preventDefault();
             
+            if (!gameStarted) {
+                gameStarted = true;
+                hideGameStatus();
+            }
+            
             switch(e.key) {
                 case 'ArrowLeft':
                     pacman.nextDir = 'LEFT';
@@ -220,6 +281,12 @@
                     break;
                 case 'ArrowDown':
                     pacman.nextDir = 'DOWN';
+                    break;
+                case ' ':
+                case 'Enter':
+                    if (gameOver || youWin) {
+                        resetGame();
+                    }
                     break;
             }
         });
@@ -235,6 +302,11 @@
 
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            if (!gameStarted) {
+                gameStarted = true;
+                hideGameStatus();
+            }
+            
             const touch = e.touches[0];
             const rect = canvas.getBoundingClientRect();
             touchStartX = touch.clientX - rect.left;
@@ -252,6 +324,9 @@
             const deltaY = touchEndY - touchStartY;
             
             if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE && Math.abs(deltaY) < MIN_SWIPE_DISTANCE) {
+                if (gameOver || youWin) {
+                    resetGame();
+                }
                 return;
             }
             
@@ -268,29 +343,55 @@
 
         // Mobile button controls
         function setupMobileControls() {
-            if ('ontouchstart' in window) {
+            const isMobile = 'ontouchstart' in window || window.innerWidth <= 768;
+            if (isMobile) {
                 document.getElementById('mobileControls').style.display = 'block';
             }
             
-            document.getElementById('upBtn').addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                pacman.nextDir = 'UP';
-            });
+            function addControlListener(id, direction) {
+                const btn = document.getElementById(id);
+                
+                ['touchstart', 'mousedown'].forEach(event => {
+                    btn.addEventListener(event, (e) => {
+                        e.preventDefault();
+                        if (!gameStarted) {
+                            gameStarted = true;
+                            hideGameStatus();
+                        }
+                        pacman.nextDir = direction;
+                    });
+                });
+            }
             
-            document.getElementById('downBtn').addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                pacman.nextDir = 'DOWN';
-            });
+            addControlListener('upBtn', 'UP');
+            addControlListener('downBtn', 'DOWN');
+            addControlListener('leftBtn', 'LEFT');
+            addControlListener('rightBtn', 'RIGHT');
+        }
+
+        // Game status display
+        function showGameStatus(mainText, subText) {
+            const statusEl = document.getElementById('gameStatus');
+            const textEl = document.getElementById('statusText');
+            const subtextEl = document.getElementById('statusSubtext');
             
-            document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                pacman.nextDir = 'LEFT';
-            });
+            textEl.textContent = mainText;
+            textEl.style.fontSize = '48px';
+            textEl.style.fontWeight = 'bold';
+            textEl.style.color = mainText.includes('WIN') ? COLORS.YELLOW : COLORS.RED;
+            textEl.style.textShadow = '2px 2px 4px rgba(0,0,0,0.8)';
+            textEl.style.marginBottom = '20px';
             
-            document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                pacman.nextDir = 'RIGHT';
-            });
+            subtextEl.textContent = subText;
+            subtextEl.style.fontSize = '18px';
+            subtextEl.style.color = COLORS.WHITE;
+            subtextEl.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
+            
+            statusEl.style.display = 'block';
+        }
+
+        function hideGameStatus() {
+            document.getElementById('gameStatus').style.display = 'none';
         }
 
         // Utility functions
@@ -309,6 +410,45 @@
             document.getElementById('score').textContent = `Score: ${score}`;
         }
 
+        function resetGame() {
+            // Reset game state
+            score = 0;
+            gameOver = false;
+            youWin = false;
+            frightenedTimer = 0;
+            globalFrame = 0;
+            gameStarted = false;
+            
+            // Reset maze
+            MAZE = MAZE_TEMPLATE.map(row => [...row]);
+            while (MAZE.length < MAZE_ROWS) {
+                MAZE.push(new Array(MAZE_COLS).fill(1));
+            }
+            
+            // Reset pacman
+            pacman = {
+                pos: findStartPosition(),
+                dir: 'LEFT',
+                nextDir: 'LEFT',
+                mouthAngle: 0,
+                mouthOpening: true
+            };
+            
+            // Reset ghosts
+            ghosts.forEach(ghost => {
+                ghost.frightened = false;
+                ghost.eaten = false;
+                ghost.respawnTime = 0;
+            });
+            ghosts[0].pos = [13, 11];
+            ghosts[1].pos = [14, 11];
+            ghosts[2].pos = [13, 12];
+            ghosts[3].pos = [14, 12];
+            
+            updateScore();
+            hideGameStatus();
+        }
+
         // Drawing functions
         function drawMaze() {
             for (let row = 0; row < MAZE_ROWS; row++) {
@@ -321,6 +461,11 @@
                         case 1: // Wall
                             ctx.fillStyle = COLORS.WALL;
                             ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            
+                            // Add wall border effect
+                            ctx.strokeStyle = '#4444FF';
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                             break;
                         case 2: // Dot
                             ctx.fillStyle = COLORS.WHITE;
@@ -333,6 +478,14 @@
                             ctx.beginPath();
                             ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, 6, 0, Math.PI * 2);
                             ctx.fill();
+                            
+                            // Add glow effect
+                            ctx.shadowColor = COLORS.WHITE;
+                            ctx.shadowBlur = 10;
+                            ctx.beginPath();
+                            ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, 6, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.shadowBlur = 0;
                             break;
                         case 4: // Ghost door
                             ctx.fillStyle = COLORS.WHITE;
@@ -348,13 +501,15 @@
             const y = pacman.pos[1] * CELL_SIZE + CELL_SIZE/2;
             const radius = CELL_SIZE/2 - 2;
 
-            // Update mouth animation
-            if (pacman.mouthOpening) {
-                pacman.mouthAngle += 0.15;
-                if (pacman.mouthAngle >= 0.8) pacman.mouthOpening = false;
-            } else {
-                pacman.mouthAngle -= 0.15;
-                if (pacman.mouthAngle <= 0) pacman.mouthOpening = true;
+            // Update mouth animation only if game is active
+            if (gameStarted && !gameOver && !youWin) {
+                if (pacman.mouthOpening) {
+                    pacman.mouthAngle += 0.15;
+                    if (pacman.mouthAngle >= 0.8) pacman.mouthOpening = false;
+                } else {
+                    pacman.mouthAngle -= 0.15;
+                    if (pacman.mouthAngle <= 0) pacman.mouthOpening = true;
+                }
             }
 
             // Draw Pacman
@@ -385,6 +540,12 @@
             ctx.lineTo(x, y);
             ctx.closePath();
             ctx.fill();
+            
+            // Add glow effect
+            ctx.shadowColor = COLORS.YELLOW;
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.shadowBlur = 0;
         }
 
         function drawGhosts() {
@@ -423,13 +584,18 @@
                     ctx.arc(x - radius/3, y - radius/3, radius/8, 0, Math.PI * 2);
                     ctx.arc(x + radius/3, y - radius/3, radius/8, 0, Math.PI * 2);
                     ctx.fill();
+                } else {
+                    // Frightened ghost eyes
+                    ctx.fillStyle = COLORS.WHITE;
+                    ctx.fillRect(x - radius/2, y - radius/2, radius/4, radius/4);
+                    ctx.fillRect(x + radius/4, y - radius/2, radius/4, radius/4);
                 }
             });
         }
 
         // Movement functions
         function movePacman() {
-            if (globalFrame % PACMAN_MOVE_INTERVAL !== 0) return;
+            if (!gameStarted || globalFrame % PACMAN_MOVE_INTERVAL !== 0) return;
             
             // Try to move in the next direction
             const [dx, dy] = DIRECTIONS[pacman.nextDir];
@@ -460,6 +626,8 @@
         }
 
         function moveGhost(ghost) {
+            if (!gameStarted) return;
+            
             if (ghost.eaten && Date.now() < ghost.respawnTime) {
                 return;
             }
@@ -503,6 +671,8 @@
 
         // Game logic
         function checkCollisions() {
+            if (!gameStarted) return;
+            
             // Check ghost collisions
             ghosts.forEach(ghost => {
                 if (ghost.eaten) return;
@@ -515,12 +685,15 @@
                         updateScore();
                     } else {
                         gameOver = true;
+                        showGameStatus('GAME OVER', 'Press SPACE or tap to restart');
                     }
                 }
             });
         }
 
         function checkDots() {
+            if (!gameStarted) return;
+            
             const cell = MAZE[pacman.pos[1]][pacman.pos[0]];
             
             if (cell === 2) {
@@ -531,115 +704,3 @@
                 MAZE[pacman.pos[1]][pacman.pos[0]] = 0;
                 score += 50;
                 updateScore();
-                
-                // Frighten ghosts
-                frightenedTimer = Date.now() + FRIGHTENED_DURATION;
-                ghosts.forEach(ghost => {
-                    if (!ghost.eaten) {
-                        ghost.frightened = true;
-                    }
-                });
-            }
-        }
-
-        function updateFrightenedState() {
-            if (frightenedTimer && Date.now() > frightenedTimer) {
-                frightenedTimer = 0;
-                ghosts.forEach(ghost => {
-                    ghost.frightened = false;
-                });
-            }
-        }
-
-        function checkWinCondition() {
-            // Check if all dots and power pellets are eaten
-            let dotsRemaining = 0;
-            for (let row = 0; row < MAZE_ROWS; row++) {
-                for (let col = 0; col < MAZE_COLS; col++) {
-                    if (MAZE[row][col] === 2 || MAZE[row][col] === 3) {
-                        dotsRemaining++;
-                    }
-                }
-            }
-            
-            if (dotsRemaining === 0) {
-                youWin = true;
-            }
-        }
-
-        function drawGameOver() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.fillRect(0, 0, WIDTH, HEIGHT);
-            
-            ctx.fillStyle = COLORS.RED;
-            ctx.font = 'bold 48px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('GAME OVER', WIDTH/2, HEIGHT/2);
-            
-            ctx.fillStyle = COLORS.WHITE;
-            ctx.font = '24px Arial';
-            ctx.fillText('Refresh to play again', WIDTH/2, HEIGHT/2 + 60);
-        }
-
-        function drawYouWin() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-            ctx.fillRect(0, 0, WIDTH, HEIGHT);
-            
-            ctx.fillStyle = COLORS.YELLOW;
-            ctx.font = 'bold 48px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('YOU WIN!', WIDTH/2, HEIGHT/2);
-            
-            ctx.fillStyle = COLORS.WHITE;
-            ctx.font = '24px Arial';
-            ctx.fillText(`Final Score: ${score}`, WIDTH/2, HEIGHT/2 + 60);
-            ctx.fillText('Refresh to play again', WIDTH/2, HEIGHT/2 + 90);
-        }
-
-        // Main game loop
-        function gameLoop() {
-            if (gameOver) {
-                drawGameOver();
-                return;
-            }
-            
-            if (youWin) {
-                drawYouWin();
-                return;
-            }
-            
-            // Clear canvas
-            ctx.fillStyle = COLORS.BLACK;
-            ctx.fillRect(0, 0, WIDTH, HEIGHT);
-            
-            // Update game state
-            globalFrame++;
-            movePacman();
-            ghosts.forEach(moveGhost);
-            checkDots();
-            updateFrightenedState();
-            checkCollisions();
-            checkWinCondition();
-            
-            // Draw everything
-            drawMaze();
-            drawPacman();
-            drawGhosts();
-            
-            // Continue game loop
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Initialize game
-        function initGame() {
-            console.log('Initializing Pacman game...');
-            setupMobileControls();
-            updateScore();
-            gameLoop();
-        }
-
-        // Start the game when page loads
-        window.addEventListener('load', initGame);
-    </script>
-</body>
-</html>
