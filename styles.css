@@ -1,26 +1,116 @@
 body {
     margin: 0;
-    padding: 0;
+    padding: 20px;
+    background-color: #000;
+    color: white;
+    font-family: Arial, sans-serif;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    background-color: #000;
-    font-family: Arial, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
-.game-container {
-    position: relative;
-}
-
-.score {
-    color: white;
-    font-size: 24px;
-    margin-bottom: 10px;
+#gameContainer {
     text-align: center;
 }
 
+#score {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #FFFF00;
+    font-weight: bold;
+}
+
 #gameCanvas {
-    border: 2px solid #333;
-    background-color: #000;
-} 
+    border: 3px solid #2121DE;
+    display: block;
+    margin: 0 auto;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(33, 33, 222, 0.5);
+}
+
+#mobileControls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    z-index: 1000;
+}
+
+.control-btn {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    background-color: #2121DE;
+    color: white;
+    border: 2px solid #FFFF00;
+    border-radius: 10px;
+    margin: 5px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: all 0.1s ease;
+}
+
+.control-btn:active {
+    background-color: #FFFF00;
+    color: #2121DE;
+    transform: scale(0.95);
+}
+
+.control-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#instructions {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #ccc;
+    max-width: 400px;
+    line-height: 1.4;
+}
+
+#gameStatus {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 100;
+    display: none;
+}
+
+@media (max-width: 768px) {
+    #mobileControls {
+        display: block !important;
+    }
+    
+    body {
+        padding: 10px;
+    }
+    
+    #gameCanvas {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+}
