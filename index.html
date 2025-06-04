@@ -24,6 +24,9 @@
 
         #gameContainer {
             text-align: center;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         #score {
@@ -83,11 +86,14 @@
         }
 
         #instructions {
-            margin-top: 20px;
+            margin: 20px auto;
             font-size: 14px;
             color: #ccc;
-            max-width: 400px;
+            max-width: 500px;
             line-height: 1.4;
+            text-align: center;
+            padding: 0 20px;
+            box-sizing: border-box;
         }
 
         #gameStatus {
@@ -98,6 +104,10 @@
             text-align: center;
             z-index: 100;
             display: none;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         @media (max-width: 768px) {
@@ -391,11 +401,13 @@
                 textEl.style.color = mainText.includes('WIN') ? COLORS.YELLOW : COLORS.RED;
                 textEl.style.textShadow = '2px 2px 4px rgba(0,0,0,0.8)';
                 textEl.style.marginBottom = '20px';
+                textEl.style.textAlign = 'center';
                 
                 subtextEl.textContent = subText;
                 subtextEl.style.fontSize = '18px';
                 subtextEl.style.color = COLORS.WHITE;
                 subtextEl.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
+                subtextEl.style.textAlign = 'center';
                 
                 statusEl.style.display = 'block';
             }
