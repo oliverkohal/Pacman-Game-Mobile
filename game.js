@@ -155,8 +155,8 @@
     <script>
         // Game Constants
         const CELL_SIZE = 24;
-        const MAZE_COLS = 28;
-        const MAZE_ROWS = 31;
+        const MAZE_COLS = 25;
+        const MAZE_ROWS = 25;
         const WIDTH = CELL_SIZE * MAZE_COLS;
         const HEIGHT = CELL_SIZE * MAZE_ROWS;
 
@@ -174,39 +174,37 @@
             GREEN: '#00FF00'
         };
 
-        // Fixed maze layout (0=empty, 1=wall, 2=dot, 3=power pellet, 4=ghost door)
+        // Simplified maze layout (0=empty, 1=wall, 2=dot, 3=power pellet)
         const MAZE_TEMPLATE = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,3,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,3,1],
-            [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-            [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-            [1,2,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1],
-            [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
-            [1,1,1,1,1,1,2,1,1,1,1,1,0,1,1,0,1,1,1,1,1,2,1,1,1,1,1,1],
-            [1,1,1,1,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,1,1,1,1,1],
-            [1,1,1,1,1,1,2,1,1,0,1,1,4,4,4,4,1,1,0,1,1,2,1,1,1,1,1,1],
-            [0,0,0,0,0,0,2,0,0,0,1,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0],
-            [1,1,1,1,1,1,2,1,1,0,1,0,0,0,0,0,0,1,0,1,1,2,1,1,1,1,1,1],
-            [1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1],
-            [1,1,1,1,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,1,1,2,1,1,1,1,1,1],
-            [1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1],
-            [1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,1,1,2,1],
-            [1,3,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,3,1],
-            [1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1,1],
-            [1,2,2,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,2,1],
-            [1,2,1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,2,1],
-            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,3,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,2,2,2,2,3,1],
+            [1,2,1,1,1,2,1,1,1,1,1,2,1,1,2,1,1,1,1,1,2,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,2,1,2,1,1,1,2,1],
+            [1,2,2,2,2,2,1,2,2,2,2,1,1,1,2,2,2,2,1,2,2,2,2,2,1],
+            [1,1,1,1,1,2,1,1,1,1,2,1,1,1,2,1,1,1,1,2,1,1,1,1,1],
+            [0,0,0,0,1,2,1,2,2,2,2,2,2,2,2,2,2,2,1,2,1,0,0,0,0],
+            [1,1,1,1,1,2,1,2,1,1,0,0,0,0,0,1,1,2,1,2,1,1,1,1,1],
+            [2,2,2,2,2,2,2,2,1,0,0,0,0,0,0,0,1,2,2,2,2,2,2,2,2],
+            [1,1,1,1,1,2,1,2,1,0,0,0,0,0,0,0,1,2,1,2,1,1,1,1,1],
+            [0,0,0,0,1,2,1,2,1,1,1,1,1,1,1,1,1,2,1,2,1,0,0,0,0],
+            [1,1,1,1,1,2,1,2,2,2,2,2,2,2,2,2,2,2,1,2,1,1,1,1,1],
+            [1,2,2,2,2,2,2,2,2,2,2,1,1,1,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,2,1,1,1,1,2,1,1,1,2,1,1,1,1,2,1,1,1,2,1],
+            [1,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,2,2,2,1],
+            [1,1,1,2,1,2,1,2,1,1,1,1,1,1,1,1,1,2,1,2,1,2,1,1,1],
+            [1,2,2,2,2,2,1,2,2,2,2,1,1,1,2,2,2,2,1,2,2,2,2,2,1],
+            [1,2,1,1,1,1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,2,1,1,1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,2,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,3,1,1,2,1,1,1,1,1,1,2,1,2,1,1,1,1,1,1,2,1,1,3,1],
+            [1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
         // Create a working copy of the maze
         let MAZE = MAZE_TEMPLATE.map(row => [...row]);
-
-        // Pad maze to 31 rows if needed
-        while (MAZE.length < MAZE_ROWS) {
-            MAZE.push(new Array(MAZE_COLS).fill(1));
-        }
 
         // Game state
         let score = 0;
@@ -229,9 +227,16 @@
             DOWN: [0, 1]
         };
 
-        // Fixed starting position - Pacman starts in bottom corridor
+        // Find starting position for Pacman
         function findStartPosition() {
-            return [13, 20]; // Bottom corridor, center position
+            for (let row = 0; row < MAZE_ROWS; row++) {
+                for (let col = 0; col < MAZE_COLS; col++) {
+                    if (MAZE[row][col] !== 1) {
+                        return [col, row];
+                    }
+                }
+            }
+            return [12, 18]; // Default position
         }
 
         // Pacman state
@@ -243,12 +248,12 @@
             mouthOpening: true
         };
 
-        // Ghosts - starting in the ghost house
+        // Ghosts
         const ghosts = [
-            { name: 'blinky', color: COLORS.RED, pos: [13, 11], dir: 'LEFT', frightened: false, eaten: false, respawnTime: 0 },
-            { name: 'pinky', color: COLORS.PINK, pos: [14, 11], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
-            { name: 'inky', color: COLORS.CYAN, pos: [13, 12], dir: 'DOWN', frightened: false, eaten: false, respawnTime: 0 },
-            { name: 'clyde', color: COLORS.ORANGE, pos: [14, 12], dir: 'DOWN', frightened: false, eaten: false, respawnTime: 0 }
+            { name: 'blinky', color: COLORS.RED, pos: [12, 9], dir: 'LEFT', frightened: false, eaten: false, respawnTime: 0 },
+            { name: 'pinky', color: COLORS.PINK, pos: [11, 9], dir: 'UP', frightened: false, eaten: false, respawnTime: 0 },
+            { name: 'inky', color: COLORS.CYAN, pos: [13, 9], dir: 'DOWN', frightened: false, eaten: false, respawnTime: 0 },
+            { name: 'clyde', color: COLORS.ORANGE, pos: [12, 10], dir: 'DOWN', frightened: false, eaten: false, respawnTime: 0 }
         ];
 
         // Canvas setup
@@ -421,9 +426,6 @@
             
             // Reset maze
             MAZE = MAZE_TEMPLATE.map(row => [...row]);
-            while (MAZE.length < MAZE_ROWS) {
-                MAZE.push(new Array(MAZE_COLS).fill(1));
-            }
             
             // Reset pacman
             pacman = {
@@ -435,15 +437,17 @@
             };
             
             // Reset ghosts
-            ghosts.forEach(ghost => {
+            ghosts.forEach((ghost, index) => {
                 ghost.frightened = false;
                 ghost.eaten = false;
                 ghost.respawnTime = 0;
+                switch(index) {
+                    case 0: ghost.pos = [12, 9]; break;
+                    case 1: ghost.pos = [11, 9]; break;
+                    case 2: ghost.pos = [13, 9]; break;
+                    case 3: ghost.pos = [12, 10]; break;
+                }
             });
-            ghosts[0].pos = [13, 11];
-            ghosts[1].pos = [14, 11];
-            ghosts[2].pos = [13, 12];
-            ghosts[3].pos = [14, 12];
             
             updateScore();
             hideGameStatus();
@@ -486,10 +490,6 @@
                             ctx.arc(x + CELL_SIZE/2, y + CELL_SIZE/2, 6, 0, Math.PI * 2);
                             ctx.fill();
                             ctx.shadowBlur = 0;
-                            break;
-                        case 4: // Ghost door
-                            ctx.fillStyle = COLORS.WHITE;
-                            ctx.fillRect(x, y + CELL_SIZE/2 - 2, CELL_SIZE, 4);
                             break;
                     }
                 }
@@ -635,7 +635,7 @@
             if (ghost.eaten && Date.now() >= ghost.respawnTime) {
                 ghost.eaten = false;
                 ghost.frightened = false;
-                ghost.pos = [14, 11]; // Reset position
+                ghost.pos = [12, 9]; // Reset position
             }
             
             if (globalFrame % GHOST_MOVE_INTERVAL !== 0) return;
@@ -704,3 +704,17 @@
                 MAZE[pacman.pos[1]][pacman.pos[0]] = 0;
                 score += 50;
                 updateScore();
+                
+                // Make all ghosts frightened
+                ghosts.forEach(ghost => {
+                    if (!ghost.eaten) {
+                        ghost.frightened = true;
+                    }
+                });
+                frightenedTimer = Date.now() + FRIGHTENED_DURATION;
+            }
+            
+            // Check win condition
+            let dotsRemaining = 0;
+            for (let row = 0; row < MAZE_
+
