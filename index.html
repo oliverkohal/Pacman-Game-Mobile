@@ -230,9 +230,9 @@
         // Detect if device is mobile for speed adjustment
         const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 768;
         
-        // Adjust movement intervals based on device type
-        const PACMAN_MOVE_INTERVAL = isMobile ? 5 : 3;
-        const GHOST_MOVE_INTERVAL = isMobile ? 6 : 4;
+        // Adjust movement intervals based on device type (higher = slower)
+        const PACMAN_MOVE_INTERVAL = isMobile ? 8 : 3;
+        const GHOST_MOVE_INTERVAL = isMobile ? 10 : 4;
 
         // Direction mapping
         const DIRECTIONS = {
