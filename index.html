@@ -226,8 +226,13 @@
 
         const FRIGHTENED_DURATION = 8000;
         const GHOST_RESPAWN_TIME = 3000;
-        const PACMAN_MOVE_INTERVAL = 3;
-        const GHOST_MOVE_INTERVAL = 4;
+        
+        // Detect if device is mobile for speed adjustment
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 768;
+        
+        // Adjust movement intervals based on device type
+        const PACMAN_MOVE_INTERVAL = isMobile ? 5 : 3;
+        const GHOST_MOVE_INTERVAL = isMobile ? 6 : 4;
 
         // Direction mapping
         const DIRECTIONS = {
@@ -358,8 +363,8 @@
 
         // Mobile button controls
         function setupMobileControls() {
-            const isMobile = 'ontouchstart' in window || window.innerWidth <= 768;
-            if (isMobile) {
+            const isMobileDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 768;
+            if (isMobileDevice) {
                 const mobileControls = document.getElementById('mobileControls');
                 if (mobileControls) {
                     mobileControls.style.display = 'block';
